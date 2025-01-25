@@ -1,0 +1,10 @@
+recdvb.o: recdvb.c recdvb.h config.h recdvbcore.h time.h queue.h reader.h \
+ channel.h
+decoder.o: decoder.c decoder.h config.h
+mkpath.o: mkpath.c mkpath.h
+time.o: time.c time.h
+recdvbcore.o: recdvbcore.c recdvbcore.h
+queue.o: queue.c queue.h
+reader.o: reader.c reader.h recdvb.h config.h queue.h mkpath.h decoder.h \
+ recdvbcore.h
+preset.o: preset.c channel.h
