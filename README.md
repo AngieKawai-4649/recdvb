@@ -50,13 +50,16 @@ destfile: TS出力ファイル名を指定する ( - 指定時は標準出力）
 デフォルトではPT2 BS/CS adapter0 2 地上波 adapter1 3  
 PT3 BS/CS adapter0 1 地上波 adapter2 3  
 PT2,PT3を刺しているとadapterがかち合ってしまいブートする度に変わってしまうので固定する  
-/etc/modprobe.d/options-dvb.conf を作成し以下を記述する  
-衛星0 地上0 衛星1 地上1の順に指定  
+/etc/modprobe.d/options-dvb.conf を作成し、衛星0 地上0 衛星1 地上1の順に指定する  
 
-options earth_pt1 adapter_nr=0,1,2,3  
-options earth_pt3 adapter_nr=4,5,6,7  
+## 【PT2 2枚 PT3 1枚 取り付けてあるPCの options-dvb.confファイル内容例】  
+options earth_pt1 adapter_nr=0,1,2,3,4,5,6,7  
+options earth_pt3 adapter_nr=8,9,10,11  
 
-この場合はPT2 0 2 がBS/CS 1 3 が地上波 PT3 4 6 がBS/CS 5 7 が地上波となる  
+この場合は以下のデバイス配置となる
+PT2-1 BS/CS 0 2  地上波 1 3  
+PT2-2 BS/CS 4 6  地上波 5 7  
+PT3-1 BS/CS 8 10 地上波 9 11
 
 確認方法  
 /var/log/kern.log  
