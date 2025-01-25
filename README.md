@@ -56,10 +56,10 @@ PT2,PT3を刺しているとadapterがかち合ってしまいブートする度
 options earth_pt1 adapter_nr=0,1,2,3,4,5,6,7  
 options earth_pt3 adapter_nr=8,9,10,11  
 
-この場合は以下のデバイス配置となる
+この場合は以下のデバイス配置となる  
 PT2-1 BS/CS 0 2  地上波 1 3  
 PT2-2 BS/CS 4 6  地上波 5 7  
-PT3-1 BS/CS 8 10 地上波 9 11
+PT3-1 BS/CS 8 10 地上波 9 11  
 
 確認方法  
 /var/log/kern.log  
