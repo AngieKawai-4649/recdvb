@@ -65,3 +65,37 @@ PT3-1 BS/CS 8 10 地上波 9 11
 /var/log/kern.log  
 earth-pt1,earth_pt3の各チューナーがどのアダプタに接続されているか確認できる  
 
+## 【mirakurun tuners.ymlの内容例】  
+
+\- name: PT2-S1  
+  types:  
+    \- BS  
+    \- CS  
+  command: recdvb --dev 0 --b25 <channel> - -  
+  decoder:  
+  isDisabled: false  
+
+\- name: PT2-S2  
+  types:  
+    \- BS  
+    \- CS  
+  command: recdvb --dev 2 --b25 <channel> - -  
+  decoder:  
+  isDisabled: false  
+
+\- name: PT2-T1  
+  types:  
+    \- GR  
+  command: recdvb --dev 1 --b25 <channel> - -  
+  decoder:  
+  isDisabled: false  
+
+\- name: PT2-T2  
+  types:  
+    \- GR  
+  command: recdvb --dev 3 --b25 <channel> - -  
+  decoder:
+  isDisabled: false
+
+
+
