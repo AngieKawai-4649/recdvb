@@ -20,7 +20,7 @@ DVB device TVtuner
 Makefileのコメントを参照  
 
 ## 【使用方法】  
-./recdvb [--b25 [--round N] [--strip] [--EMM]] [--dev devicenumber] [--lnb voltage] [--tsid TSID] channel rectime destfile  
+$ ./recdvb [--b25 [--round N] [--strip] [--EMM]] [--dev devicenumber] [--lnb voltage] [--tsid TSID] channel rectime destfile  
 
 --b25 : B25解除する  B25解除を行わないでビルドした場合は指定不可  
 　以下は--b25指定時のサブオプション  
@@ -41,9 +41,9 @@ rectime: 録画時間を秒単位で指定する  ( - 指定時は何時まで�
 destfile: TS出力ファイル名を指定する ( - 指定時は標準出力）  
 
 例: NHK東京 デバイスを指定して30秒録画する  
-　　./recdvb --b25 --dev 3 27 30 aaa.ts  
+　　$ ./recdvb --b25 --dev 3 27 30 aaa.ts  
 　WOWOWプライム デバイスを指定して60秒録画する  
-　　./recdvb --b25 --dev 0 BS03_0 60 bbb.ts  
+　　$ ./recdvb --b25 --dev 0 BS03_0 60 bbb.ts  
 
 ## 【デバイスの固定】  
 
