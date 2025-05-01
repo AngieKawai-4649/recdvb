@@ -33,7 +33,6 @@
 #include "time.h"
 #include "queue.h"
 #include "reader.h"
-#include "channel.h"
 
 #define NEVENTS 32
 #define TUNE_TIMEOUT 5
@@ -116,27 +115,17 @@ static void show_version(char **argv)
 
 static int parse_options(struct recdvb_options *opts, int argc, char **argv)
 {
-	int rc;
+	int rc, rtn = 1;
 	int option_index;
-	bool help = false;
-	bool version = false;
-	bool validation = true;
 
+	char *channel = NULL;
 	char *endptr = NULL;
-	char *lnbstr = NULL;
-	char *tsidstr = NULL;
 	char *recsecstr = NULL;
-	char *dev_numstr = NULL;
-#ifdef HAVE_LIBARIB25
-	char *roundstr = NULL;
-#endif
 
 	/* set defaults */
+	opts->tsid = 0;
 	opts->lnb = 0;
 	opts->dev_num = 0;
-	opts->tsid = 0;
-	opts->destfile = NULL;
-	opts->channel = NULL;
 	opts->recsec = 0;
 	opts->use_stdout = false;
 #ifdef HAVE_LIBARIB25
@@ -160,157 +149,141 @@ static int parse_options(struct recdvb_options *opts, int argc, char **argv)
 			opts->emm = true;
 			break;
 		case 'r':
-			roundstr = optarg;
+			if(optarg){
+				opts->round = (int)strtol(optarg, &endptr, 10);
+				if (*endptr != '\0') {
+					fprintf(stderr, "Error: Parse b25 round number failed.\n");
+					rtn = -1;
+				}
+			}else{
+				fprintf(stderr, "Error: b25 round number is not set\n");
+				rtn = -1;
+			}
+
 			break;
 #endif
 		case 'h':
-			help = true;
+			show_help(argv);
+			rtn = 0;
 			break;
 		case 'v':
-			version = true;
+			show_version(argv);
+			rtn = 0;
 			break;
-		/* following options require argument */
 		case 'n':
-			lnbstr = optarg;
+			if(optarg){
+				opts->lnb = (int)strtol(optarg, &endptr, 10);
+				if (*endptr != '\0') {
+					fprintf(stderr, "Error: Parse LNB number failed.\n");
+					rtn = -1;
+				} else {
+					if(!(opts->lnb == 0 || opts->lnb == 11 || opts->lnb == 15 )){
+						fprintf(stderr, "Error: The only values allowed for LNB are 0, 11, 15.\n");
+						rtn = -1;
+					}
+				}
+			}else{
+				fprintf(stderr, "Error: LNB is not set. input 0 11 or 15\n");
+				rtn = -1;
+			}
 			break;
 		case 'd':
-			dev_numstr = optarg;
+			if(optarg){
+				opts->dev_num = (int)strtol(optarg, &endptr, 10);
+				if (*endptr != '\0') {
+					fprintf(stderr, "Error: Parse device number failed.\n");
+					rtn = -1;
+				} else if (opts->dev_num < 0) {
+					fprintf(stderr, "Error: device number must be positive.\n");
+					rtn = -1;
+				}
+			}else{
+				fprintf(stderr, "Error: device number is not set.\n");
+				rtn = -1;
+			}
 			break;
 		case 't':
-			tsidstr = optarg;
+			if(optarg){
+				fprintf(stderr, "TSID optarg : %s\n", optarg);
+				opts->tsid = (unsigned int)strtoul(optarg, &endptr, 0);
+				if (*endptr != '\0') {
+					fprintf(stderr, "Error: Parse TSID number failed.\n");
+					rtn = -1;
+				}
+			}else{
+				fprintf(stderr, "Error: TSID is not set.\n");
+				rtn = -1;
+			}
 			break;
+		default:
+			fprintf(stderr, "Error: Incorrect options.\n");
+			rtn = -1;
+			break;	
 		}
+	
 	}
 
-	if (help) {
-		show_help(argv);
-		return 1;
-	}
-
-	if (version) {
-		show_version(argv);
-		return 1;
+	if (rtn !=1) {
+		return(rtn);
 	}
 
 	if (argc - optind < 3) {
 		fprintf(stderr, "Error: Some required parameters are missing!\n");
 		fprintf(stderr, "       Try '%s --help' for more information.\n", argv[0]);
-		return -1;
+		return(-1);
 	}
 
 	/* get no option args */
-	opts->channel = argv[optind];
+	channel = argv[optind];
 	recsecstr = argv[optind + 1];
-	opts->destfile = argv[optind + 2];
+	snprintf(opts->destfile, sizeof(opts->destfile), "%s", argv[optind + 2]);
 	
-	/* check options */
-#ifdef HAVE_LIBARIB25
-	if (opts->b25 && roundstr) {
-		opts->round = (int)strtol(roundstr, &endptr, 10);
-		if (*endptr != '\0') {
-			fprintf(stderr, "Error: Parse b25 round number failed.\n");
-			validation = false;
-		}
-	}
-#endif
-
-	if (lnbstr) {
-		opts->lnb = (int)strtol(lnbstr, &endptr, 10);
-		if (*endptr != '\0') {
-			fprintf(stderr, "Error: Parse LNB number failed.\n");
-			validation = false;
-		} else {
-			switch (opts->lnb) {
-			case 0:
-			case 11:
-			case 15:
-				break;
-			default:
-				fprintf(stderr, "Error: Specified LNB value is not valid.\n");
-				validation = false;
-			}
-		}
+	rtn = search_channel_key(channel, 0, &(opts->channel_info));
+	if(rtn == CH_RETURN_NOTFOUND){
+		snprintf(opts->channel_info.channel_key, sizeof(opts->channel_info.channel_key), "%s", channel);
+		fprintf(stderr, "Error: Channel is not found.\n");
+		return(-1);
 	}
 
-	if (dev_numstr) {
-		opts->dev_num = (int)strtol(dev_numstr, &endptr, 10);
-		if (*endptr != '\0') {
-			fprintf(stderr, "Error: Parse device number failed.\n");
-			validation = false;
-		} else if (opts->dev_num < 0) {
-			fprintf(stderr, "Error: device number must be positive.\n");
-			validation = false;
-		}
-	}
-
-	if (tsidstr) {
-		opts->tsid = (unsigned int)strtoul(tsidstr, &endptr, 0);
-		if (*endptr != '\0') {
-			fprintf(stderr, "Error: Parse TSID number failed.\n");
-			validation = false;
-		}
-	}
-
-	/* 引数でTSIDを指定してもbsca_ch.confにチャンネル登録されている場合、そちらを優先する */
-	unsigned int freq,tsid,c;
-	if(channel_conv(opts->channel, &tsid, &freq) == -1){
-		/* GR */
-		c =(unsigned int)strtoul(opts->channel,NULL,0);
-		opts->freq = (c * 6000 + 395143) * 1000;
-	}else{
-		opts->tsid = tsid;
-		c = freq;
-		/* BS */
-		if(101 <= c && c <= 150) {
-			//# BS-IF (101:BS-01, 103:BS-03, .., 123:BS-23)
-			opts->freq = (c - 101) * 19180 + 1049480;
-		/* CS */
-		}else if(201 <= c && c <= 250) {
-			//# CS-IF (202:ND-02, 204:ND-04, .., 224:ND-24)
-			opts->freq = (c - 202) * 20000 + 1613000;
-		}else if(60000 <= c && c < 2456123) {
-			//# kHz
-			opts->freq = c;
-		}else{
-			validation = false;
-		}
+	if(opts->channel_info.tuning_space == SPI_UHF || opts->channel_info.tuning_space == SPI_CATV){
+		opts->channel_info.freq *= 1000;
+	}else if(opts->channel_info.tuning_space == SPI_BS || opts->channel_info.tuning_space == SPI_CS){
+		opts->tsid = opts->channel_info.tsid;
 	}
 
 	if (parse_time(recsecstr, &opts->recsec) != 0) {
 		fprintf(stderr, "Error: Failed to parse recsec.\n");
-		validation = false;
+		return(-1);
 	}
 
-	if (opts->destfile && !strcmp("-", opts->destfile)) {
+	if (!strcmp("-", opts->destfile)) {
 		opts->use_stdout = true;
 	}
 
-	if (!validation) {
-		return -1;
-	}
 
-	return 0;
+	return 1;
 }
 
 static void show_user_input(struct recdvb_options *opts)
 {
 	fprintf(stderr, "Info: Specified options:\n");
-	fprintf(stderr, "      Channel: %s\n", opts->channel);
+	fprintf(stderr, "      Channel:          %s  %s\n", opts->channel_info.channel_key, opts->channel_info.ch_name);
 	fprintf(stderr, "      Destination file: %s\n", opts->destfile);
 	if (opts->recsec == -1) {
-		fprintf(stderr, "      Record seconds: indefinite\n");
+		fprintf(stderr, "      Record seconds:   indefinite\n");
 	} else {
-		fprintf(stderr, "      Record seconds: %d\n", opts->recsec);
+		fprintf(stderr, "      Record seconds:   %d\n", opts->recsec);
 	}
-	fprintf(stderr, "      Device Number: %d\n", opts->dev_num);
-	fprintf(stderr, "      TSID: 0x%x\n", opts->tsid);
-	fprintf(stderr, "      LNB: %dV\n", opts->lnb);
+	fprintf(stderr, "      Device Number:    %d\n", opts->dev_num);
+	fprintf(stderr, "      FREQ:             %u\n", opts->channel_info.freq);
+	fprintf(stderr, "      TSID:             0x%04x\n", (opts->tsid > 0) ? opts->tsid : opts->channel_info.l_tsid);
+	fprintf(stderr, "      LNB:              %dV\n", opts->lnb);
 #ifdef HAVE_LIBARIB25
-	fprintf(stderr, "      B25 decode: %s\n", opts->b25 ? "enable" : "disable");
+	fprintf(stderr, "      B25 decode:       %s\n", opts->b25 ? "enable" : "disable");
 	if (opts->b25) {
-		fprintf(stderr, "          strip: %s\n", opts->strip ? "enable" : "disable");
-		fprintf(stderr, "          emm: %s\n", opts->emm ? "enable" : "disable");
-		fprintf(stderr, "          round: %d\n", opts->round);
+		fprintf(stderr, "          strip:        %s\n", opts->strip ? "enable" : "disable");
+		fprintf(stderr, "          emm:          %s\n", opts->emm ? "enable" : "disable");
+		fprintf(stderr, "          round:        %d\n", opts->round);
 	}
 #endif
 }
@@ -346,12 +319,6 @@ int main(int argc, char **argv)
 	BUFSZ   *bufptr;
 	static struct recdvb_options opts;
 
-	/* bscs_ch.conf read */
-	rc = set_ch_table();
-	if (rc != 0) {
-		return rc; // exit with failure.
-	}
-
 	/* for epoll */
 	int epfd = -1;
 	int nfds = 0;
@@ -378,7 +345,7 @@ int main(int argc, char **argv)
 	if (rc == -1) {
 		return 1; // exit with failure.
 	}
-	if (rc == 1) {
+	if (rc == 0) {
 		return 0; // exit successfully.
 	}
 
@@ -459,7 +426,7 @@ int main(int argc, char **argv)
 	}
 
 	/* tune */
-	if(frontend_tune(fefd, opts.freq, opts.tsid, opts.lnb) != 0) {
+	if(frontend_tune(fefd, opts.channel_info.freq, opts.tsid, opts.lnb) != 0) {
 		goto end;
 	}
 
