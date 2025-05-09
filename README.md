@@ -3,7 +3,7 @@
 ベース　recdvb_ver1.3.1  
 
 対象デバイス  
-DVB device TVtuner  
+DVB device TV-tuner  
 pt1,pt2,pt3用Linux DVBドライバーが自動的にカーネルに組み込まれるので  
 カーネルモジュール(ドライバー)をインストールする必要がない  
 カーネルモジュールearth-pt1(pt1,pt2用) earth_pt3(pt3用)はCanonicalによって署名されているので  
