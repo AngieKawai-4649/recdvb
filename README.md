@@ -19,7 +19,7 @@ pt1,pt2,pt3用Linux DVBドライバーが自動的にカーネルに組み込ま
 ４．bscs_ch.confをフルパスで指定する環境変数 BSCSCHPATH を設定  
 　BSCSCHPATH設定時はそのディレクトリパス配下にbscs_ch.confを置く  
 　BSCSCHPATHが設定されていない時はrecdvbと同じディレクトリ(通常は/usr/local/bin)にbscs_ch.confを置く  
-5. 上記4 を全て廃止
+5. 上記2 4 を全て廃止
  チャンネル情報はchannelconfから取得するように修正  
 
 ## 【ビルド方法】  
